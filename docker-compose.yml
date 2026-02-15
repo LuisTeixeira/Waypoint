@@ -17,6 +17,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgres/data
 
+  migrate:
+    image: migrate/migrate
+    container_name: waypoint_migrate
+    env_file:
+      - .env
+    volumes:
+      - ./backend/migrations:/migrations
+    command: -path=/migrations/ -database "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable" up
+    depends_on:
+      db:
+        condition: service_healthy
+
   api:
     build:
       context: ./backend
@@ -31,8 +43,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-password}
       DB_NAME: ${DB_NAME:-waypoint}
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
       - ./backend:/app # Live reload
 
