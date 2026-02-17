@@ -11,15 +11,15 @@ import (
 	"github.com/luisteixeira/waypoint/backend/internal/middleware"
 )
 
-type PostgresActivityRepo struct {
+type postgresActivityRepo struct {
 	db *sql.DB
 }
 
-func NewPostgresActivityRepo(db *sql.DB) *PostgresActivityRepo {
-	return &PostgresActivityRepo{db: db}
+func NewPostgresActivityRepo(db *sql.DB) *postgresActivityRepo {
+	return &postgresActivityRepo{db: db}
 }
 
-func (r *PostgresActivityRepo) CreateRealization(ctx context.Context, activityRealization *domain.ActivityRealization) error {
+func (r *postgresActivityRepo) CreateRealization(ctx context.Context, activityRealization *domain.ActivityRealization) error {
 	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
 	if !ok {
 		return fmt.Errorf("unauthorized: family_id missing")
@@ -53,7 +53,7 @@ func (r *PostgresActivityRepo) CreateRealization(ctx context.Context, activityRe
 	return tx.Commit()
 }
 
-func (r *PostgresActivityRepo) GetRealizationByID(ctx context.Context, id uuid.UUID) (*domain.ActivityRealization, error) {
+func (r *postgresActivityRepo) GetRealizationByID(ctx context.Context, id uuid.UUID) (*domain.ActivityRealization, error) {
 	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
 	if !ok {
 		return nil, fmt.Errorf("Unauthorized: family_id missing from context")
@@ -91,4 +91,42 @@ func (r *PostgresActivityRepo) GetRealizationByID(ctx context.Context, id uuid.U
 
 	activity_realization.CaregiversIDs = caregiverIDs
 	return &activity_realization, nil
+}
+
+func (r *postgresActivityRepo) GetActiveByEntity(ctx context.Context, entityID uuid.UUID) (*domain.ActivityRealization, error) {
+	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
+	if !ok {
+		return nil, fmt.Errorf("unauthorized: family_id missing")
+	}
+
+	query := `
+			SELECT
+				ar.id, ar.family_id, ar.definition_id, ar.entity_id, ar.status,
+				ar.started_at, ar.finished_at,
+				COALESCE(array_agg(rc.caregiver_id) FILTER (WHERE rc.caregiver_id IS NOT NULL), '{}')
+			FROM activity_realizations as ar
+			LEFT JOIN realization_caregivers rc ON ar.id = rc.realization_id
+			WHERE ar.entity_id = $1 AND ar.family_id = $2 AND ar.finished_at IS NULL
+			GROUP bY ar.id
+			ORDER BY ar.started_at DESC
+			LIMIT 1;
+	`
+
+	var ar domain.ActivityRealization
+	var caregiverIDs []uuid.UUID
+
+	err := r.db.QueryRowContext(ctx, query, entityID, familyID).Scan(
+		&ar.ID, &ar.FamilyID, &ar.DefinitionID, &ar.EntityID, &ar.Status,
+		&ar.StartedAt, &ar.FinishedAt, pq.Array(&caregiverIDs),
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to check active status: %w", err)
+	}
+
+	ar.CaregiversIDs = caregiverIDs
+	return &ar, nil
 }

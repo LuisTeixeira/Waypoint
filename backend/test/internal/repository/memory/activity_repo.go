@@ -54,3 +54,22 @@ func (r *InMemoryActivityRepo) GetRealizationByID(ctx context.Context, id uuid.U
 	}
 	return &res, nil
 }
+
+func (r *InMemoryActivityRepo) GetActiveByEntity(ctx context.Context, entityID uuid.UUID) (*domain.ActivityRealization, error) {
+	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
+	if !ok {
+		return nil, fmt.Errorf("unauthorized")
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, ar := range r.realizations {
+		if ar.FamilyID == familyID && ar.EntityID == entityID && ar.FinishedAt == nil {
+			copyAr := ar
+			return &copyAr, nil
+		}
+	}
+
+	return nil, nil
+}
