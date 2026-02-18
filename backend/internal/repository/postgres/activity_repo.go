@@ -106,16 +106,15 @@ func (r *postgresActivityRepo) GetActiveByEntity(ctx context.Context, entityID u
 				COALESCE(array_agg(rc.caregiver_id) FILTER (WHERE rc.caregiver_id IS NOT NULL), '{}')
 			FROM activity_realizations as ar
 			LEFT JOIN realization_caregivers rc ON ar.id = rc.realization_id
-			WHERE ar.entity_id = $1 AND ar.family_id = $2 AND ar.finished_at IS NULL
+			WHERE ar.entity_id = $1 AND ar.family_id = $2 AND ar.status = $3
 			GROUP bY ar.id
-			ORDER BY ar.started_at DESC
 			LIMIT 1;
 	`
 
 	var ar domain.ActivityRealization
 	var caregiverIDs []uuid.UUID
 
-	err := r.db.QueryRowContext(ctx, query, entityID, familyID).Scan(
+	err := r.db.QueryRowContext(ctx, query, entityID, familyID, domain.StatusInProgress).Scan(
 		&ar.ID, &ar.FamilyID, &ar.DefinitionID, &ar.EntityID, &ar.Status,
 		&ar.StartedAt, &ar.FinishedAt, pq.Array(&caregiverIDs),
 	)

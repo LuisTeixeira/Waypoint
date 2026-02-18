@@ -65,11 +65,12 @@ func (r *InMemoryActivityRepo) GetActiveByEntity(ctx context.Context, entityID u
 	defer r.mu.RUnlock()
 
 	for _, ar := range r.realizations {
-		if ar.FamilyID == familyID && ar.EntityID == entityID && ar.FinishedAt == nil {
+		if ar.FamilyID == familyID &&
+			ar.EntityID == entityID &&
+			ar.Status == domain.StatusInProgress { // Explicit status check
 			copyAr := ar
 			return &copyAr, nil
 		}
 	}
-
 	return nil, nil
 }

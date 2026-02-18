@@ -28,7 +28,7 @@ func TestActivityService_StartActivity(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, ar)
-		assert.Equal(t, "in_progress", ar.Status)
+		assert.Equal(t, domain.StatusInProgress, ar.Status)
 		assert.NotNil(t, ar.StartedAt)
 	})
 

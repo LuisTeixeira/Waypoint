@@ -34,7 +34,7 @@ func (s *activityService) StartActivity(ctx context.Context, defID, entityID uui
 		DefinitionID:  defID,
 		EntityID:      entityID,
 		CaregiversIDs: caregiverIDs,
-		Status:        "in_progress",
+		Status:        domain.StatusInProgress,
 		StartedAt:     &now,
 	}
 
