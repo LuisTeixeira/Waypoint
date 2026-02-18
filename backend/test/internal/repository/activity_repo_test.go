@@ -26,7 +26,7 @@ func TestActivityRepository(t *testing.T) {
 		DefinitionID:  uuid.New(),
 		EntityID:      entityID,
 		CaregiversIDs: caregiverIDs,
-		Status:        "in_progress",
+		Status:        domain.StatusInProgress,
 		StartedAt:     &startTime,
 	}
 
@@ -40,7 +40,7 @@ func TestActivityRepository(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, input.ID, output.ID)
 		assert.Equal(t, familyID, output.FamilyID)
-		assert.Equal(t, "in_progress", output.Status)
+		assert.Equal(t, domain.StatusInProgress, output.Status)
 
 		assert.Len(t, output.CaregiversIDs, 2)
 		assert.Contains(t, output.CaregiversIDs, caregiverIDs[0])
