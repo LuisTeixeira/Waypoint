@@ -23,9 +23,12 @@ CREATE TABLE entities (
 
 CREATE TABLE activity_definitions(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    family_id UUID REFERENCES families(id) ON DELETE CASCADE,
+    family_id UUID NOT NULL,
     name TEXT NOT NULL,
-    description TEXT
+    description TEXT,
+    color_code TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE (family_id, name)
 );
 
 CREATE TABLE activity_realizations(
