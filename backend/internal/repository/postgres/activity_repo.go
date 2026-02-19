@@ -129,3 +129,20 @@ func (r *postgresActivityRepo) GetActiveByEntity(ctx context.Context, entityID u
 	ar.CaregiversIDs = caregiverIDs
 	return &ar, nil
 }
+
+func (r *postgresActivityRepo) UpdateRealization(ctx context.Context, activityRealization *domain.ActivityRealization) error {
+	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
+	if !ok {
+		return fmt.Errorf("unauthorized: family_id missing")
+	}
+
+	query := `
+			UPDATE activity_realizations
+			SET status = $1, finished_at = $2
+			WHERE id = $3 and family_id = $4
+	`
+
+	_, err := r.db.ExecContext(ctx, query, activityRealization.Status, activityRealization.FinishedAt,
+		activityRealization.ID, familyID)
+	return err
+}
