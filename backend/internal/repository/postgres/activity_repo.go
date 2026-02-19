@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/luisteixeira/waypoint/backend/internal/domain"
-	"github.com/luisteixeira/waypoint/backend/internal/middleware"
+	"github.com/luisteixeira/waypoint/backend/internal/repository"
 )
 
 type postgresActivityRepo struct {
@@ -20,9 +20,9 @@ func NewPostgresActivityRepo(db *sql.DB) *postgresActivityRepo {
 }
 
 func (r *postgresActivityRepo) CreateRealization(ctx context.Context, activityRealization *domain.ActivityRealization) error {
-	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
-	if !ok {
-		return fmt.Errorf("unauthorized: family_id missing")
+	familyID, err := repository.GetFamilyIdFromContext(ctx)
+	if err != nil {
+		return err
 	}
 
 	tx, err := r.db.BeginTx(ctx, nil)
@@ -54,9 +54,9 @@ func (r *postgresActivityRepo) CreateRealization(ctx context.Context, activityRe
 }
 
 func (r *postgresActivityRepo) GetRealizationByID(ctx context.Context, id uuid.UUID) (*domain.ActivityRealization, error) {
-	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
-	if !ok {
-		return nil, fmt.Errorf("Unauthorized: family_id missing from context")
+	familyID, err := repository.GetFamilyIdFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	query := `
@@ -72,7 +72,7 @@ func (r *postgresActivityRepo) GetRealizationByID(ctx context.Context, id uuid.U
 	var activity_realization domain.ActivityRealization
 	var caregiverIDs []uuid.UUID
 
-	err := r.db.QueryRowContext(ctx, query, id, familyID).Scan(
+	err = r.db.QueryRowContext(ctx, query, id, familyID).Scan(
 		&activity_realization.ID,
 		&activity_realization.FamilyID,
 		&activity_realization.DefinitionID,
@@ -94,9 +94,9 @@ func (r *postgresActivityRepo) GetRealizationByID(ctx context.Context, id uuid.U
 }
 
 func (r *postgresActivityRepo) GetActiveByEntity(ctx context.Context, entityID uuid.UUID) (*domain.ActivityRealization, error) {
-	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
-	if !ok {
-		return nil, fmt.Errorf("unauthorized: family_id missing")
+	familyID, err := repository.GetFamilyIdFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	query := `
@@ -114,7 +114,7 @@ func (r *postgresActivityRepo) GetActiveByEntity(ctx context.Context, entityID u
 	var ar domain.ActivityRealization
 	var caregiverIDs []uuid.UUID
 
-	err := r.db.QueryRowContext(ctx, query, entityID, familyID, domain.StatusInProgress).Scan(
+	err = r.db.QueryRowContext(ctx, query, entityID, familyID, domain.StatusInProgress).Scan(
 		&ar.ID, &ar.FamilyID, &ar.DefinitionID, &ar.EntityID, &ar.Status,
 		&ar.StartedAt, &ar.FinishedAt, pq.Array(&caregiverIDs),
 	)
@@ -131,9 +131,9 @@ func (r *postgresActivityRepo) GetActiveByEntity(ctx context.Context, entityID u
 }
 
 func (r *postgresActivityRepo) UpdateRealization(ctx context.Context, activityRealization *domain.ActivityRealization) error {
-	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
-	if !ok {
-		return fmt.Errorf("unauthorized: family_id missing")
+	familyID, err := repository.GetFamilyIdFromContext(ctx)
+	if err != nil {
+		return err
 	}
 
 	query := `
@@ -142,7 +142,7 @@ func (r *postgresActivityRepo) UpdateRealization(ctx context.Context, activityRe
 			WHERE id = $3 and family_id = $4
 	`
 
-	_, err := r.db.ExecContext(ctx, query, activityRealization.Status, activityRealization.FinishedAt,
+	_, err = r.db.ExecContext(ctx, query, activityRealization.Status, activityRealization.FinishedAt,
 		activityRealization.ID, familyID)
 	return err
 }

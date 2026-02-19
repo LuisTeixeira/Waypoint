@@ -13,3 +13,8 @@ type ActivityRepository interface {
 	GetActiveByEntity(ctx context.Context, entityID uuid.UUID) (*domain.ActivityRealization, error)
 	UpdateRealization(ctx context.Context, activityRealization *domain.ActivityRealization) error
 }
+
+type DefinitionRepository interface {
+	GetOrCreateByName(ctx context.Context, name string) (*domain.ActivityDefinition, error)
+	ListByFamily(ctx context.Context) ([]domain.ActivityDefinition, error)
+}

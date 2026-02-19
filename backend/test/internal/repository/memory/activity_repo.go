@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/luisteixeira/waypoint/backend/internal/domain"
-	"github.com/luisteixeira/waypoint/backend/internal/middleware"
+	"github.com/luisteixeira/waypoint/backend/internal/repository"
 )
 
 type InMemoryActivityRepo struct {
@@ -22,9 +22,9 @@ func NewInMemoryActivityRepo() *InMemoryActivityRepo {
 }
 
 func (r *InMemoryActivityRepo) CreateRealization(ctx context.Context, activityRealization *domain.ActivityRealization) error {
-	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
-	if !ok {
-		return fmt.Errorf("unauthorized: family_id missing")
+	familyID, err := repository.GetFamilyIdFromContext(ctx)
+	if err != nil {
+		return err
 	}
 
 	r.mu.Lock()
@@ -37,9 +37,9 @@ func (r *InMemoryActivityRepo) CreateRealization(ctx context.Context, activityRe
 }
 
 func (r *InMemoryActivityRepo) GetRealizationByID(ctx context.Context, id uuid.UUID) (*domain.ActivityRealization, error) {
-	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
-	if !ok {
-		return nil, fmt.Errorf("unauthorized: family_id missing")
+	familyID, err := repository.GetFamilyIdFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	r.mu.Lock()
@@ -56,9 +56,9 @@ func (r *InMemoryActivityRepo) GetRealizationByID(ctx context.Context, id uuid.U
 }
 
 func (r *InMemoryActivityRepo) GetActiveByEntity(ctx context.Context, entityID uuid.UUID) (*domain.ActivityRealization, error) {
-	familyID, ok := ctx.Value(middleware.FamilyIDKey).(uuid.UUID)
-	if !ok {
-		return nil, fmt.Errorf("unauthorized")
+	familyID, err := repository.GetFamilyIdFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	r.mu.RLock()
