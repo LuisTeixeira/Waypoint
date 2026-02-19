@@ -46,6 +46,18 @@ func (s *activityService) StartActivity(ctx context.Context, defID, entityID uui
 }
 
 func (s *activityService) CompleteActivity(ctx context.Context, id uuid.UUID) error {
-	// TODO: implement status changes
-	return nil
+	activityRealization, err := s.repo.GetRealizationByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if activityRealization.Status != domain.StatusInProgress {
+		return fmt.Errorf("Cannot complete activity: current status is %s", activityRealization.Status)
+	}
+
+	now := time.Now()
+	activityRealization.Status = domain.StatusCompleted
+	activityRealization.FinishedAt = &now
+
+	return s.repo.UpdateRealization(ctx, activityRealization)
 }

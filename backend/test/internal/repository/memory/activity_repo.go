@@ -74,3 +74,16 @@ func (r *InMemoryActivityRepo) GetActiveByEntity(ctx context.Context, entityID u
 	}
 	return nil, nil
 }
+
+func (r *InMemoryActivityRepo) UpdateRealization(ctx context.Context, activityRealization *domain.ActivityRealization) error {
+	r.mu.Unlock()
+	defer r.mu.Unlock()
+
+	existing, ok := r.realizations[activityRealization.ID]
+	if !ok || existing.FamilyID != activityRealization.FamilyID {
+		return fmt.Errorf("not found")
+	}
+
+	r.realizations[activityRealization.ID] = *activityRealization
+	return nil
+}
