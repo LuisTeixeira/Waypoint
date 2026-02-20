@@ -9,7 +9,15 @@ import (
 
 var ErrEntityBusy = errors.New("child is already participating in an activity")
 
+type StartActivityInput struct {
+	EntityID           uuid.UUID
+	DefinitionID       uuid.UUID
+	NewDefinittionName string
+	CaregiversIDs      []uuid.UUID
+}
+
 type ActivityService interface {
-	StartActivity(ctx context.Context, definitionID, entityID uuid.UUID, caregiverIDs []uuid.UUID) (ActivityRealization, error)
+	StartActivity(ctx context.Context, input StartActivityInput) (ActivityRealization, error)
 	CompleteActivity(ctx context.Context, realizationID uuid.UUID) error
+	PlanActivity(ctx context.Context, input StartActivityInput) (*ActivityRealization, error)
 }
