@@ -50,7 +50,7 @@ func (r *InMemoryDefintionRepo) ListByFamily(ctx context.Context) ([]domain.Acti
 		return nil, err
 	}
 
-	r.mu.RLock()
+	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	var defs []domain.ActivityDefinition

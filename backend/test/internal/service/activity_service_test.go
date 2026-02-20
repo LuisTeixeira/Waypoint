@@ -14,7 +14,8 @@ import (
 
 func TestActivityService_StartActivity(t *testing.T) {
 	repo := memory.NewInMemoryActivityRepo()
-	svc := service.NewActivityService(repo)
+	defRepo := memory.NewInMemoryDefinitionRepo()
+	svc := service.NewActivityService(repo, defRepo)
 
 	familyID := uuid.New()
 	entityID := uuid.New()
@@ -24,7 +25,13 @@ func TestActivityService_StartActivity(t *testing.T) {
 		defID := uuid.New()
 		caregivers := []uuid.UUID{uuid.New()}
 
-		ar, err := svc.StartActivity(ctx, defID, entityID, caregivers)
+		input := domain.StartActivityInput{
+			DefinitionID:  defID,
+			EntityID:      entityID,
+			CaregiversIDs: caregivers,
+		}
+
+		ar, err := svc.StartActivity(ctx, input)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, ar)
@@ -39,10 +46,74 @@ func TestActivityService_StartActivity(t *testing.T) {
 		defID := uuid.New()
 		caregivers := []uuid.UUID{uuid.New()}
 
-		ar, err := svc.StartActivity(ctx, defID, entityID, caregivers)
+		input := domain.StartActivityInput{
+			DefinitionID:  defID,
+			EntityID:      entityID,
+			CaregiversIDs: caregivers,
+		}
+
+		ar, err := svc.StartActivity(ctx, input)
 
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, domain.ErrEntityBusy)
 		assert.Nil(t, ar)
+	})
+}
+
+func TestActivityService_PlanActivity(t *testing.T) {
+	repo := memory.NewInMemoryActivityRepo()
+	defRepo := memory.NewInMemoryDefinitionRepo()
+	svc := service.NewActivityService(repo, defRepo)
+
+	familyID := uuid.New()
+	entityID := uuid.New()
+	ctx := context.WithValue(context.Background(), middleware.FamilyIDKey, familyID)
+
+	t.Run("Plan activity with new definition name", func(t *testing.T) {
+		input := domain.StartActivityInput{
+			EntityID:           entityID,
+			NewDefinittionName: "Sport",
+			CaregiversIDs:      []uuid.UUID{uuid.New()},
+		}
+
+		activityRealization, err := svc.PlanActivity(ctx, input)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, activityRealization)
+		assert.Equal(t, domain.StatusPlanned, activityRealization.Status)
+		assert.Nil(t, activityRealization.StartedAt, "Planned activities should not have a started at")
+
+		defs, _ := defRepo.ListByFamily(ctx)
+		assert.Len(t, defs, 1)
+		assert.Equal(t, "Sport", defs[0].Name)
+	})
+
+	t.Run("Plan activity even if child is currently busy", func(t *testing.T) {
+		_, _ = svc.StartActivity(ctx, domain.StartActivityInput{
+			EntityID:           entityID,
+			NewDefinittionName: "Dinner",
+		})
+
+		input := domain.StartActivityInput{
+			EntityID:           entityID,
+			NewDefinittionName: "Sleep",
+		}
+
+		activityRealization, err := svc.PlanActivity(ctx, input)
+
+		assert.NoError(t, err, "Planning should not be blocked by activity in progress")
+		assert.Equal(t, domain.StatusPlanned, activityRealization.Status)
+	})
+
+	t.Run("Fail if neither ID nor Name is provided", func(t *testing.T) {
+		input := domain.StartActivityInput{
+			EntityID: entityID,
+		}
+
+		activityRealization, err := svc.PlanActivity(ctx, input)
+
+		assert.Error(t, err)
+		assert.Nil(t, activityRealization)
+		assert.Contains(t, err.Error(), "either definition_id or new_definition_name")
 	})
 }
