@@ -13,8 +13,8 @@ type postgresDefinitionRepo struct {
 	db *sql.DB
 }
 
-func NewPostgresDefinitionRepo(db *sql.DB) *postgresActivityRepo {
-	return &postgresActivityRepo{db: db}
+func NewPostgresDefinitionRepo(db *sql.DB) *postgresDefinitionRepo {
+	return &postgresDefinitionRepo{db: db}
 }
 
 func (r *postgresDefinitionRepo) GetOrCreateByName(ctx context.Context, name string) (*domain.ActivityDefinition, error) {
