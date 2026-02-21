@@ -17,7 +17,7 @@ type StartActivityInput struct {
 }
 
 type ActivityService interface {
-	StartActivity(ctx context.Context, input StartActivityInput) (ActivityRealization, error)
+	StartActivity(ctx context.Context, input StartActivityInput) (*ActivityRealization, error)
 	CompleteActivity(ctx context.Context, realizationID uuid.UUID) error
 	PlanActivity(ctx context.Context, input StartActivityInput) (*ActivityRealization, error)
 }
