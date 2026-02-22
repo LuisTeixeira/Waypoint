@@ -27,7 +27,7 @@ func (r *postgresDefinitionRepo) GetOrCreateByName(ctx context.Context, name str
 			INSERT INTO activity_definitions (family_id, name)
 			VALUES ($1, $2)
 			ON CONFLICT (family_id, name) DO UPDATE SET name = EXCLUDED.name
-			RETURNING id, family_id, name, decription, color_code;
+			RETURNING id, family_id, name, description, color_code;
 	`
 
 	var def domain.ActivityDefinition
