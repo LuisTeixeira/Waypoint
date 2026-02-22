@@ -19,8 +19,8 @@ type ActivityDefinition struct {
 	ID          uuid.UUID `json:"id"`
 	FamilyID    uuid.UUID `json:"family_id"`
 	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	ColorCode   string    `json:"color_code"`
+	Description *string   `json:"description"`
+	ColorCode   *string   `json:"color_code"`
 }
 
 type ActivityRealization struct {
