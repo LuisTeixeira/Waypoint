@@ -22,6 +22,33 @@ func NewActivityService(repo ActivityRepository, defRepo DefinitionRepository) *
 }
 
 func (s *activityService) StartActivity(ctx context.Context, input domain.StartActivityInput) (*domain.ActivityRealization, error) {
+	var realization *domain.ActivityRealization
+	var err error
+
+	if input.RealizationID != uuid.Nil {
+		realization, err = s.repo.GetRealizationByID(ctx, input.RealizationID)
+		if err != nil {
+			return nil, err
+		}
+
+		if realization.Status != domain.StatusPlanned {
+			return nil, fmt.Errorf("cannot start activity: current status is %s", realization.Status)
+		}
+	} else {
+		defID, err := s.resolveDefinitionID(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+
+		realization = &domain.ActivityRealization{
+			ID:            uuid.New(),
+			DefinitionID:  defID,
+			EntityID:      input.EntityID,
+			CaregiversIDs: input.CaregiversIDs,
+			Status:        domain.StatusPlanned,
+		}
+	}
+
 	active, err := s.repo.GetActiveByEntity(ctx, input.EntityID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check child status: %w", err)
@@ -30,24 +57,18 @@ func (s *activityService) StartActivity(ctx context.Context, input domain.StartA
 		return nil, domain.ErrEntityBusy
 	}
 
-	defID, err := s.resolveDefinitionID(ctx, input)
+	now := time.Now()
+	realization.Status = domain.StatusInProgress
+	realization.StartedAt = &now
+
+	if input.RealizationID != uuid.Nil {
+		err = s.repo.UpdateRealization(ctx, realization)
+	} else {
+		err = s.repo.CreateRealization(ctx, realization)
+	}
 	if err != nil {
 		return nil, err
 	}
-
-	now := time.Now()
-	realization := &domain.ActivityRealization{
-		DefinitionID:  defID,
-		EntityID:      input.EntityID,
-		CaregiversIDs: input.CaregiversIDs,
-		Status:        domain.StatusInProgress,
-		StartedAt:     &now,
-	}
-
-	if err := s.repo.CreateRealization(ctx, realization); err != nil {
-		return nil, err
-	}
-
 	return realization, nil
 }
 

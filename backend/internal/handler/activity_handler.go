@@ -10,9 +10,10 @@ import (
 	"github.com/luisteixeira/waypoint/backend/internal/domain"
 )
 
-type CreateActivityRequest struct {
+type ActivityRequest struct {
+	RealizationID      *uuid.UUID  `json:"realization_id,omitempty"`
 	EntityID           uuid.UUID   `json:"entity_id"`
-	DefinitionID       uuid.UUID   `json:"definition_id,omitempty"`
+	DefinitionID       *uuid.UUID  `json:"definition_id,omitempty"`
 	NewDefinittionName string      `json:"new_definition_name,omitempty"`
 	CaregiverIDs       []uuid.UUID `json:"caregiver_ids"`
 }
@@ -26,17 +27,17 @@ func NewActivityHandler(service domain.ActivityService) *ActivityHandler {
 }
 
 func (h *ActivityHandler) PlanActivity(w http.ResponseWriter, r *http.Request) {
-	var createActivityRequest CreateActivityRequest
+	var activityRequest ActivityRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&createActivityRequest); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&activityRequest); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 	}
 
 	input := domain.StartActivityInput{
-		EntityID:           createActivityRequest.EntityID,
-		DefinitionID:       createActivityRequest.DefinitionID,
-		NewDefinittionName: createActivityRequest.NewDefinittionName,
-		CaregiversIDs:      createActivityRequest.CaregiverIDs,
+		EntityID:           activityRequest.EntityID,
+		DefinitionID:       *activityRequest.DefinitionID,
+		NewDefinittionName: activityRequest.NewDefinittionName,
+		CaregiversIDs:      activityRequest.CaregiverIDs,
 	}
 
 	activityRealization, err := h.service.PlanActivity(r.Context(), input)
@@ -51,17 +52,23 @@ func (h *ActivityHandler) PlanActivity(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActivityHandler) StartActivity(w http.ResponseWriter, r *http.Request) {
-	var createActivityRequest CreateActivityRequest
-	if err := json.NewDecoder(r.Body).Decode(&createActivityRequest); err != nil {
+	var activityRequest ActivityRequest
+	if err := json.NewDecoder(r.Body).Decode(&activityRequest); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
 	input := domain.StartActivityInput{
-		EntityID:           createActivityRequest.EntityID,
-		DefinitionID:       createActivityRequest.DefinitionID,
-		NewDefinittionName: createActivityRequest.NewDefinittionName,
-		CaregiversIDs:      createActivityRequest.CaregiverIDs,
+		EntityID:           activityRequest.EntityID,
+		NewDefinittionName: activityRequest.NewDefinittionName,
+		CaregiversIDs:      activityRequest.CaregiverIDs,
+	}
+
+	if activityRequest.RealizationID != nil {
+		input.RealizationID = *activityRequest.RealizationID
+	}
+	if activityRequest.DefinitionID != nil {
+		input.DefinitionID = *activityRequest.DefinitionID
 	}
 
 	activityRealization, err := h.service.StartActivity(r.Context(), input)
@@ -71,6 +78,12 @@ func (h *ActivityHandler) StartActivity(w http.ResponseWriter, r *http.Request) 
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
+		}
+
+		if err.Error() == "not found" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "planned activity not found"})
 		}
 
 		log.Printf("StartActivity Error: %v", err)

@@ -10,6 +10,7 @@ import (
 var ErrEntityBusy = errors.New("child is already participating in an activity")
 
 type StartActivityInput struct {
+	RealizationID      uuid.UUID
 	EntityID           uuid.UUID
 	DefinitionID       uuid.UUID
 	NewDefinittionName string
