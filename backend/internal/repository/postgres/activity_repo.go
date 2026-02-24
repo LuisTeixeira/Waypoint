@@ -62,7 +62,7 @@ func (r *postgresActivityRepo) GetRealizationByID(ctx context.Context, id uuid.U
 	query := `
 			SELECT
 				ar.id, ar.family_id, ar.definition_id, ar.entity_id, ar.status,
-				ar.started_id, ar.finished_at,
+				ar.started_at, ar.finished_at,
 				COALESCE(array_agg(rc.caregiver_id) FILTER(WHERE rc.caregiver_id IS NOT NULL), '{}') as caregiver_ids
 			FROM activity_realizations ar
 			LEFT JOIN realization_caregivers rc ON ar.id = rc.realization_id
@@ -76,6 +76,7 @@ func (r *postgresActivityRepo) GetRealizationByID(ctx context.Context, id uuid.U
 		&activity_realization.ID,
 		&activity_realization.FamilyID,
 		&activity_realization.DefinitionID,
+		&activity_realization.EntityID,
 		&activity_realization.Status,
 		&activity_realization.StartedAt,
 		&activity_realization.FinishedAt,
@@ -138,11 +139,11 @@ func (r *postgresActivityRepo) UpdateRealization(ctx context.Context, activityRe
 
 	query := `
 			UPDATE activity_realizations
-			SET status = $1, finished_at = $2
-			WHERE id = $3 and family_id = $4
+			SET status = $1, started_at=$2, finished_at = $3
+			WHERE id = $4 and family_id = $5
 	`
 
-	_, err = r.db.ExecContext(ctx, query, activityRealization.Status, activityRealization.FinishedAt,
+	_, err = r.db.ExecContext(ctx, query, activityRealization.Status, activityRealization.StartedAt, activityRealization.FinishedAt,
 		activityRealization.ID, familyID)
 	return err
 }
