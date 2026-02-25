@@ -35,9 +35,15 @@ func (h *ActivityHandler) PlanActivity(w http.ResponseWriter, r *http.Request) {
 
 	input := domain.StartActivityInput{
 		EntityID:           activityRequest.EntityID,
-		DefinitionID:       *activityRequest.DefinitionID,
 		NewDefinittionName: activityRequest.NewDefinittionName,
 		CaregiversIDs:      activityRequest.CaregiverIDs,
+	}
+
+	if activityRequest.RealizationID != nil {
+		input.RealizationID = *activityRequest.RealizationID
+	}
+	if activityRequest.DefinitionID != nil {
+		input.DefinitionID = *activityRequest.DefinitionID
 	}
 
 	activityRealization, err := h.service.PlanActivity(r.Context(), input)

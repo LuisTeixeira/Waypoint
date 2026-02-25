@@ -76,7 +76,7 @@ func (r *InMemoryActivityRepo) GetActiveByEntity(ctx context.Context, entityID u
 }
 
 func (r *InMemoryActivityRepo) UpdateRealization(ctx context.Context, activityRealization *domain.ActivityRealization) error {
-	r.mu.Unlock()
+	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	existing, ok := r.realizations[activityRealization.ID]
