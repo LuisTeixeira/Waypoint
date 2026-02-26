@@ -3,6 +3,7 @@ package handler_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -85,6 +86,86 @@ func TestActivityHandler_PlanAndStart(t *testing.T) {
 	})
 }
 
+func TestActivityHandler_FullLifecycle(t *testing.T) {
+	router := setupTestRouter()
+
+	familyID := uuid.New().String()
+	entityID := uuid.New()
+	caregiverID := uuid.New()
+
+	var activityID uuid.UUID
+
+	t.Run("Plan an activity", func(t *testing.T) {
+		payload := map[string]interface{}{
+			"entity_id":           entityID,
+			"new_definition_name": "Music Class",
+			"caregiver_ids":       []uuid.UUID{caregiverID},
+		}
+		body, _ := json.Marshal(payload)
+
+		request := httptest.NewRequest("POST", "/api/v1/activities/plan", bytes.NewBuffer(body))
+		request.Header.Set("X-Family-ID", familyID)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, request)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var response domain.ActivityRealization
+		json.Unmarshal(w.Body.Bytes(), &response)
+		assert.Equal(t, domain.StatusPlanned, response.Status)
+		activityID = response.ID
+	})
+
+	t.Run("Start the planned activity", func(t *testing.T) {
+		payload := map[string]interface{}{
+			"realization_id": activityID,
+			"entity_id":      entityID,
+		}
+		body, _ := json.Marshal(payload)
+
+		request := httptest.NewRequest("POST", "/api/v1/activities/start", bytes.NewBuffer(body))
+		request.Header.Set("X-Family-ID", familyID)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, request)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+
+		var response domain.ActivityRealization
+		json.Unmarshal(w.Body.Bytes(), &response)
+		assert.Equal(t, domain.StatusInProgress, response.Status)
+		assert.NotNil(t, response.StartedAt)
+	})
+
+	t.Run("Complete the activity", func(t *testing.T) {
+		url := fmt.Sprintf("/api/v1/activities/%s/complete", activityID.String())
+		request := httptest.NewRequest("POST", url, nil)
+		request.Header.Set("X-Family-ID", familyID)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, request)
+
+		assert.Equal(t, http.StatusNoContent, w.Code)
+	})
+
+	t.Run("Can start a new activity now that the first is completed", func(t *testing.T) {
+		payload := map[string]interface{}{
+			"entity_id":           entityID,
+			"new_definition_name": "New activity after completion",
+		}
+		body, _ := json.Marshal(payload)
+
+		request := httptest.NewRequest("POST", "/api/v1/activities/start", bytes.NewBuffer(body))
+		request.Header.Set("X-Family-ID", familyID)
+		w := httptest.NewRecorder()
+
+		router.ServeHTTP(w, request)
+
+		assert.Equal(t, http.StatusCreated, w.Code)
+	})
+}
+
 func setupTestRouter() *chi.Mux {
 	activityRepo := memory.NewInMemoryActivityRepo()
 	definitionRepo := memory.NewInMemoryDefinitionRepo()
@@ -94,8 +175,11 @@ func setupTestRouter() *chi.Mux {
 	router := chi.NewRouter()
 	router.Route("/api/v1", func(r chi.Router) {
 		r.Use(middleware.TenantMiddleware)
-		r.Post("/activities/plan", handler.PlanActivity)
-		r.Post("/activities/start", handler.StartActivity)
+		r.Route("/activities", func(r chi.Router) {
+			r.Post("/plan", handler.PlanActivity)
+			r.Post("/start", handler.StartActivity)
+			r.Post("/{id}/complete", handler.CompleteActivity)
+		})
 	})
 
 	return router

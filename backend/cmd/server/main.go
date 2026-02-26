@@ -40,8 +40,11 @@ func main() {
 
 	router.Route("/api/v1", func(r chi.Router) {
 		r.Use(wmiddleware.TenantMiddleware)
-		r.Post("/activities/plan", activityHandler.PlanActivity)
-		r.Post("/activities/start", activityHandler.StartActivity)
+		r.Route("/activities", func(r chi.Router) {
+			r.Post("/plan", activityHandler.PlanActivity)
+			r.Post("/start", activityHandler.StartActivity)
+			r.Get("/{id}/complete", activityHandler.CompleteActivity)
+		})
 	})
 
 	port := ":8080"

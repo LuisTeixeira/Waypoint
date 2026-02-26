@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/luisteixeira/waypoint/backend/internal/domain"
 )
@@ -52,9 +53,7 @@ func (h *ActivityHandler) PlanActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(activityRealization)
+	renderJSON(w, http.StatusCreated, activityRealization)
 }
 
 func (h *ActivityHandler) StartActivity(w http.ResponseWriter, r *http.Request) {
@@ -80,16 +79,12 @@ func (h *ActivityHandler) StartActivity(w http.ResponseWriter, r *http.Request) 
 	activityRealization, err := h.service.StartActivity(r.Context(), input)
 	if err != nil {
 		if errors.Is(err, domain.ErrEntityBusy) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			renderError(w, err.Error(), http.StatusConflict)
 			return
 		}
 
 		if err.Error() == "not found" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "planned activity not found"})
+			renderError(w, "planned activity not found", http.StatusNotFound)
 		}
 
 		log.Printf("StartActivity Error: %v", err)
@@ -97,7 +92,38 @@ func (h *ActivityHandler) StartActivity(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	renderJSON(w, http.StatusCreated, activityRealization)
+}
+
+func (h *ActivityHandler) CompleteActivity(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		renderError(w, "invalid activity id", http.StatusBadRequest)
+		return
+	}
+
+	err = h.service.CompleteActivity(r.Context(), id)
+	if err != nil {
+		if err.Error() == "not found" {
+			renderError(w, "activity not found", http.StatusNotFound)
+			return
+		}
+
+		log.Printf("CompletedActivity Error: %v", err)
+		renderError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func renderJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(activityRealization)
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
+}
+
+func renderError(w http.ResponseWriter, message string, status int) {
+	renderJSON(w, status, map[string]string{"error": message})
 }
