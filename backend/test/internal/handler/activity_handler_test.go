@@ -34,6 +34,7 @@ func TestActivityHandler_PlanAndStart(t *testing.T) {
 		body, _ := json.Marshal(payload)
 
 		request := httptest.NewRequest("POST", "/api/v1/activities/plan", bytes.NewBuffer(body))
+		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("X-Family-ID", familyID)
 		w := httptest.NewRecorder()
 
@@ -56,6 +57,7 @@ func TestActivityHandler_PlanAndStart(t *testing.T) {
 		body, _ := json.Marshal(payload)
 
 		request := httptest.NewRequest("POST", "/api/v1/activities/start", bytes.NewBuffer(body))
+		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("X-Family-ID", familyID)
 		w := httptest.NewRecorder()
 
@@ -77,6 +79,7 @@ func TestActivityHandler_PlanAndStart(t *testing.T) {
 		body, _ := json.Marshal(payload)
 
 		request := httptest.NewRequest("POST", "/api/v1/activities/start", bytes.NewBuffer(body))
+		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("X-Family-ID", familyID)
 		w := httptest.NewRecorder()
 
@@ -104,6 +107,7 @@ func TestActivityHandler_FullLifecycle(t *testing.T) {
 		body, _ := json.Marshal(payload)
 
 		request := httptest.NewRequest("POST", "/api/v1/activities/plan", bytes.NewBuffer(body))
+		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("X-Family-ID", familyID)
 		w := httptest.NewRecorder()
 
@@ -125,6 +129,7 @@ func TestActivityHandler_FullLifecycle(t *testing.T) {
 		body, _ := json.Marshal(payload)
 
 		request := httptest.NewRequest("POST", "/api/v1/activities/start", bytes.NewBuffer(body))
+		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("X-Family-ID", familyID)
 		w := httptest.NewRecorder()
 
@@ -141,6 +146,7 @@ func TestActivityHandler_FullLifecycle(t *testing.T) {
 	t.Run("Complete the activity", func(t *testing.T) {
 		url := fmt.Sprintf("/api/v1/activities/%s/complete", activityID.String())
 		request := httptest.NewRequest("POST", url, nil)
+		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("X-Family-ID", familyID)
 		w := httptest.NewRecorder()
 
@@ -157,6 +163,7 @@ func TestActivityHandler_FullLifecycle(t *testing.T) {
 		body, _ := json.Marshal(payload)
 
 		request := httptest.NewRequest("POST", "/api/v1/activities/start", bytes.NewBuffer(body))
+		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("X-Family-ID", familyID)
 		w := httptest.NewRecorder()
 

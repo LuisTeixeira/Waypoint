@@ -1,0 +1,14 @@
+{{ define "activity_card" }}
+<div id="activity-{{ .ID }}" class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500 flex justify-between items-center">
+    <div>
+        <h3 class="font-bold text-gray-800">{{ .DefinitionName }}</h3>
+        <p class="text-sm text-gray-500">Started just now</p>
+    </div>
+    <button hx-post="/api/v1/activities/{{ .ID }}/complete"
+            hx-target="#activity-{{ .ID }}"
+            hx-swap="outerHTML"
+            class="text-sm bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 px-3 py-1 rounded transition">
+        Complete
+    </button>
+</div>
+{{ end }}
