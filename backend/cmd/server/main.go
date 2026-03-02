@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +16,7 @@ import (
 	wmiddleware "github.com/luisteixeira/waypoint/backend/internal/middleware"
 	"github.com/luisteixeira/waypoint/backend/internal/repository/postgres"
 	"github.com/luisteixeira/waypoint/backend/internal/service"
+	"github.com/luisteixeira/waypoint/backend/internal/ui"
 )
 
 func main() {
@@ -26,12 +28,18 @@ func main() {
 
 	activityService := service.NewActivityService(activityRepo, defRepo)
 	activityHandler := handler.NewActivityHandler(activityService)
+	uiHandler := handler.NewUIHandler(activityService)
 
 	router := chi.NewRouter()
 
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Timeout(60 * time.Second))
+
+	staticFS, _ := fs.Sub(ui.Files, "static")
+	router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+
+	router.Get("/", uiHandler.ShowDashboard)
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

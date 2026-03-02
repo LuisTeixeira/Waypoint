@@ -30,8 +30,9 @@ func NewActivityHandler(service domain.ActivityService) *ActivityHandler {
 func (h *ActivityHandler) PlanActivity(w http.ResponseWriter, r *http.Request) {
 	var activityRequest ActivityRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&activityRequest); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+	if err := decodeRequest(r, &activityRequest); err != nil {
+		renderError(w, "invalid request data", http.StatusBadRequest)
+		return
 	}
 
 	input := domain.StartActivityInput{
@@ -58,8 +59,9 @@ func (h *ActivityHandler) PlanActivity(w http.ResponseWriter, r *http.Request) {
 
 func (h *ActivityHandler) StartActivity(w http.ResponseWriter, r *http.Request) {
 	var activityRequest ActivityRequest
-	if err := json.NewDecoder(r.Body).Decode(&activityRequest); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
+
+	if err := decodeRequest(r, &activityRequest); err != nil {
+		renderError(w, "invalid request data", http.StatusBadRequest)
 		return
 	}
 

@@ -1,0 +1,35 @@
+{{ define "content" }}
+<div class="grid gap-6">
+    <section>
+        <h2 class="text-lg font-semibold mb-4 text-gray-700">Active Now</h2>
+        <div id="active-activities-list"
+            hx-get="/ui/active-list"
+            hx-trigger="load, every 30s"
+            class="grid gap-4">
+            <p class="text-gray-400 italic">Checking for active tasks...</p>
+        </div>
+    </section>
+
+    <section class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+        <h3 class="font-medium text-blue-800 mb-2">New Activity</h3>
+        <form hx-post="/api/v1/activities/start" 
+            hx-target="#active-activities-list" 
+            hx-swap="afterbegin">
+            
+            <input type="hidden" name="entity_id" value="{{ .TestEntityID }}">
+
+            <div class="flex gap-2">
+                <input type="text" 
+                    name="new_definition_name" 
+                    placeholder="What is the child doing?" 
+                    class="flex-1 p-2 border rounded"
+                    required>
+                
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded">
+                    Start
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+{{ end }}
