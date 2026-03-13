@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Waypoint API",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            // Path inside the container
+            "program": "/workspaces/waypoint/cmd/server/main.go",
+            "env": {
+                "DATABASE_URL": "postgres://user:pass@db:5432/waypoint?sslmode=disable",
+                "X_FAMILY_ID": "test-family-id"
+            },
+            "args": [],
+            // 'showLog' helps you see if Delve is struggling
+            "showLog": true,
+            // Optimization flags: ensures you can see all variable values clearly
+            "buildFlags": "-gcflags=\"all=-N -l\""
+        }
+    ]
+}
