@@ -1,0 +1,23 @@
+{
+    "name": "Waypoint",
+    "dockerComposeFile": ["../docker-compose.yml"],
+    "service": "app",
+    "workspaceFolder": "/workspaces/waypoint",
+    "containerEnv": {
+        "GOPATH": "/home/vscode/go",
+        "GOMODCACHE": "/home/vscode/go/pkg/mod"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "golang.go",
+                "fortytw2.go-install",
+                "irongeek.vscode-env"
+            ]
+        }
+    },
+    "remoteUser": "vscode",
+    // Fix permission after volume is mounted
+    "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/go",
+    "runServices": ["db", "app"]
+}
