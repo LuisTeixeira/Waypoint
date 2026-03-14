@@ -10,7 +10,8 @@
             "program": "/workspaces/waypoint/cmd/server/main.go",
             "env": {
                 "DATABASE_URL": "postgres://user:pass@db:5432/waypoint?sslmode=disable",
-                "X_FAMILY_ID": "test-family-id"
+                "TEST_FAMILY_ID": "89881236-54b1-438c-86fd-dc559b9663bf",
+                "TEST_ENTITY_ID": "962820d4-d20a-442e-b8ca-c4f919f8be04"
             },
             "args": [],
             // 'showLog' helps you see if Delve is struggling
